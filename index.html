@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Animation with Molecular Reactions</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+        }
+
+        #background-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            color: #fff;
+            z-index: 1;
+            box-shadow: 0 6px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 25px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+        }
+
+        input, select {
+            margin: 15px 0;
+            padding: 15px;
+            width: 85%;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            color: #333;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 15px;
+            background: linear-gradient(135deg, #ff8a65 0%, #ff5252 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.4s ease-in-out;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            background: linear-gradient(135deg, #ff5252 0%, #ff8a65 100%);
+            box-shadow: 0 8px 20px rgba(255, 82, 82, 0.6);
+        }
+
+        .results {
+            margin-top: 30px;
+            text-align: left;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            color: #fff;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .result {
+            margin: 8px 0;
+        }
+
+        .reaction {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.8), transparent);
+            border-radius: 50%;
+            animation: reaction-anim 1.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes reaction-anim {
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <img id="background-image" src="background.jpg" alt="Background Image">
+
+    <div class="container">
+        <h1>Primer & A260 Calculator</h1>
+        <p>Enter Primer Sequence, A260 Value, and Modification:</p>
+
+        <input type="text" id="primer" placeholder="Enter Primer Sequence">
+        <input type="number" id="a260" placeholder="Enter A260 value">
+        <select id="modification">
+            <option value="0">No Modification</option>
+            <option value="20960">FAM (Ex. Coef: 20960)</option>
+            <option value="31580">HEX (Ex. Coef: 31580)</option>
+            <option value="12000">JOE (Ex. Coef: 12000)</option>
+            <option value="31980">TAMRA (Ex. Coef: 31980)</option>
+            <option value="8400">Amino (Ex. Coef: 8400)</option>
+            <option value="0">Biotin/Thiol/Phosphate (Ex. Coef: 0)</option>
+            <option value="28900">FAM-BHQ1 (Ex. Coef: 28900)</option>
+            <option value="52880">FAM-TAMRA (Ex. Coef: 52880)</option>
+            <option value="39580">HEX-BHQ1 (Ex. Coef: 39580)</option>
+            <option value="18000">CY5-BHQ2 (Ex. Coef: 18000)</option>
+            <option value="40300">TAMRA-BHQ2 (Ex. Coef: 40300)</option>
+        </select>
+        <br>
+        <button onclick="triggerReaction(event); calculateValues();">Calculate</button>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        function calculateValues() {
+            const primer = document.getElementById('primer').value.toUpperCase();
+            const a260 = parseFloat(document.getElementById('a260').value);
+            const modificationValue = parseFloat(document.getElementById('modification').value);
+
+            if (!primer || isNaN(a260)) {
+                alert('Please enter valid input values');
+                return;
+            }
+
+            const aCount = (primer.match(/A/g) || []).length;
+            const tCount = (primer.match(/T/g) || []).length;
+            const gCount = (primer.match(/G/g) || []).length;
+            const cCount = (primer.match(/C/g) || []).length;
+            const totalBases = aCount + tCount + gCount + cCount;
+
+            if (totalBases === 0) {
+                alert('Primer sequence must contain valid bases (A, T, G, C)');
+                return;
+            }
+
+            const tm = 2 * (aCount + tCount) + 4 * (gCount + cCount);
+            const gcPercent = ((gCount + cCount) / totalBases) * 100;
+            const mw = (335.2 * aCount) + (311.2 * cCount) + (326.2 * tCount) + (351 * gCount) - 101;
+            const extinctionCoefficient = (15400 * aCount) + (7400 * cCount) + (11500 * gCount) + (8700 * tCount) + modificationValue;
+            const concentration = (a260 * mw * 1000) / extinctionCoefficient;
+            const totalNg = concentration * 280;
+            const totalNmol = totalNg / mw;
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            const results = [
+                `Tm (°C): ${tm.toFixed(2)}`,
+                `GC %: ${gcPercent.toFixed(2)}%`,
+                `Total Bases (bp): ${totalBases}`,
+                `MW (g/mol): ${mw.toFixed(2)}`,
+                `Extinction Coefficient: ${extinctionCoefficient.toFixed(2)}`,
+                `Concentration (ng/µl): ${concentration.toFixed(2)}`,
+                `Total ng: ${totalNg.toFixed(2)}`,
+                `Total nmol: ${totalNmol.toFixed(2)}`
+            ];
+
+            results.forEach(result => {
+                const resultElement = document.createElement('p');
+                resultElement.className = 'result';
+                resultElement.textContent = result;
+                resultsDiv.appendChild(resultElement);
+            });
+        }
+
+        function triggerReaction(event) {
+            const button = event.target;
+            const rect = button.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const reaction = document.createElement('div');
+            reaction.className = 'reaction';
+            reaction.style.left = `${centerX - 75}px`;
+            reaction.style.top = `${centerY - 75}px`;
+            document.body.appendChild(reaction);
+
+            setTimeout(() => {
+                document.body.removeChild(reaction);
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
