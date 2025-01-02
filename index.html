@@ -123,7 +123,7 @@
         <p>Enter Primer Sequence, A260 Value, and Modification:</p>
 
         <input type="text" id="primer" placeholder="Enter Primer Sequence">
-        <input type="number" id="od" placeholder="Enter OD">
+        <input type="number" id="a260" placeholder="Enter A260 value">
         <select id="modification">
             <option value="0">No Modification</option>
             <option value="20960">FAM (Ex. Coef: 20960)</option>
@@ -147,10 +147,10 @@
     <script>
         function calculateValues() {
             const primer = document.getElementById('primer').value.toUpperCase();
-            const od = parseFloat(document.getElementById('od').value);
+            const a260 = parseFloat(document.getElementById('a260').value);
             const modificationValue = parseFloat(document.getElementById('modification').value);
 
-            if (!primer || isNaN(od)) {
+            if (!primer || isNaN(a260)) {
                 alert('Please enter valid input values');
                 return;
             }
@@ -170,9 +170,10 @@
             const gcPercent = ((gCount + cCount) / totalBases) * 100;
             const mw = (335.2 * aCount) + (311.2 * cCount) + (326.2 * tCount) + (351 * gCount) - 101;
             const extinctionCoefficient = (15400 * aCount) + (7400 * cCount) + (11500 * gCount) + (8700 * tCount) + modificationValue;
-            const concentration = (od * mw * 1000) / extinctionCoefficient;
+            const concentration = (a260 * mw * 1000) / extinctionCoefficient;
             const totalNg = concentration * 280;
             const totalNmol = totalNg / mw;
+            const od = totalNg / 33000; // Added new OD calculation.
 
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '';
@@ -185,7 +186,8 @@
                 `Extinction Coefficient: ${extinctionCoefficient.toFixed(2)}`,
                 `Concentration (ng/µl): ${concentration.toFixed(2)}`,
                 `Total ng: ${totalNg.toFixed(2)}`,
-                `Total nmol: ${totalNmol.toFixed(2)}`
+                `Total nmol: ${totalNmol.toFixed(2)}`,
+                `OD: ${od.toFixed(2)}` // Added OD to results.
             ];
 
             results.forEach(result => {
